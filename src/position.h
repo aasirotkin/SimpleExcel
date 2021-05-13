@@ -1,14 +1,9 @@
-/* common.h
-Объявления вспомогательных структур.
- */
-
 #pragma once
 
 #include <sstream>
 #include <string>
 #include <string_view>
 
-// Позиция ячейки. Индексация с нуля.
 struct Position {
     int row = 0;
     int col = 0;

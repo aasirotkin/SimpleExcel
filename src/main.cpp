@@ -1,9 +1,4 @@
-//============================================================================
-// Description : Тестирования первого задания: конвертировать между собой
-// пользовательский индекс ячейки и её программную позицию.
-//============================================================================
-
-#include "common.h"
+#include "position.h"
 #include "test_runner_p.h"
 
 #include <iostream>
@@ -128,6 +123,7 @@ void TestFromString() {
 
 int main() {
     TestRunner tr;
+
     RUN_TEST(tr, TestEqualLess);
     RUN_TEST(tr, TestIsValid);
     RUN_TEST(tr, TestToString);

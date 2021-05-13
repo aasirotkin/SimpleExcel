@@ -1,4 +1,4 @@
-#include "common.h"
+#include "position.h"
 
 #include <algorithm>
 #include <cassert>
@@ -7,10 +7,6 @@
 #include <iostream>
 #include <sstream>
 #include <tuple>
-
-const int LETTERS = 26;
-const int MAX_POSITION_LENGTH = 17;
-const int MAX_POS_LETTER_COUNT = 3;
 
 const Position Position::NONE = {-1, -1};
 
@@ -40,7 +36,7 @@ private:
     static const int A_INDEX = 65;
     static const int LETTERS = 26;
     static const int MAX_NUMBER_LENGTH = 17;
-    static const int MAX_LETTER_COUNT = 3;
+    static const int MAX_LETTER_LENGTH = 3;
 
 private:
     static std::string RowToString(int row) {
@@ -82,7 +78,7 @@ private:
 template <typename It>
 static bool IsValidString(It begin, It end) {
     return
-        (end - begin) <= PositionCreator::MAX_LETTER_COUNT &&
+        (end - begin) <= PositionCreator::MAX_LETTER_LENGTH &&
         std::all_of(begin, end, IsValidCharSymbol);
 }
 
@@ -112,7 +108,6 @@ static Position CreatePosition(It letters_begin, It letters_end, It end) {
 
 };
 
-// Реализуйте методы:
 bool Position::operator==(const Position rhs) const {
     return (row == rhs.row) && (col == rhs.col);
 }
