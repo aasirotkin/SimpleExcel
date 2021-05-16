@@ -27,7 +27,7 @@ public:
     }
 
     Value GetValue() const  override {
-        return (!text_.empty() && text_.front() == '\'') ? std::string(text_.begin() + 1, text_.end()) : text_;
+        return (!text_.empty() && text_.front() == ESCAPE_SIGN) ? std::string(text_.begin() + 1, text_.end()) : text_;
     }
 
     std::string GetText() const override {

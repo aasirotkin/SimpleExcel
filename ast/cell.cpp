@@ -17,7 +17,7 @@ void Cell::Set(std::string text) {
         if (impl_.get()) {
             impl_.release();
         }
-        if (text.size() > 1 && text.front() == '=') {
+        if (text.size() > 1 && text.front() == FORMULA_SIGN) {
             impl_ = std::make_unique<FormulaImpl>(std::string(text.begin() + 1, text.end()));
         }
         else {
