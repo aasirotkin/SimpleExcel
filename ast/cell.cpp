@@ -21,9 +21,7 @@ void Cell::Set(std::string text) {
 }
 
 void Cell::Clear() {
-    if (auto* cell_ptr = impl_.release()) {
-        delete cell_ptr;
-    }
+    impl_.reset();
     impl_ = std::make_unique<EmptyImpl>();
 }
 

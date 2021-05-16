@@ -28,16 +28,23 @@ void Sheet::SetCell(Position pos, std::string text) {
 }
 
 const CellInterface* Sheet::GetCell(Position pos) const {
-    return GetCellImpl(pos);
+    return const_cast<Sheet*>(this)->GetCell(pos);
 }
 CellInterface* Sheet::GetCell(Position pos) {
-    return GetCellImpl(pos);
+    CheckPosInPlace(pos);
+    if (sheet_list_.size() <= static_cast<size_t>(pos.row)) {
+        return nullptr;
+    }
+    if (sheet_list_.at(pos.row).size() <= static_cast<size_t>(pos.col)) {
+        return nullptr;
+    }
+    return sheet_list_.at(pos.row).at(pos.col).get();
 }
 
 void Sheet::ClearCell(Position pos) {
     CheckPosInPlace(pos);
     if (GetCell(pos)) {
-        delete sheet_list_.at(pos.row).at(pos.col).release();
+        sheet_list_.at(pos.row).at(pos.col).reset();
     }
 }
 
@@ -89,41 +96,32 @@ void Sheet::CheckPosInPlace(Position pos) const {
 
 void Sheet::ResizeSheetList(Position pos) {
     if (sheet_list_.size() <= static_cast<size_t>(pos.row)) {
-        sheet_list_.resize(pos.row + 1);
+        int new_row = pos.row + 1;
+        sheet_list_.resize(new_row);
     }
     if (sheet_list_.at(pos.row).size() <= static_cast<size_t>(pos.col)) {
-        sheet_list_.at(pos.row).resize(pos.col + 1);
+        int new_col = pos.col + 1;
+        sheet_list_.at(pos.row).resize(new_col);
     }
-}
-
-CellInterface* Sheet::GetCellImpl(Position pos) const {
-    CheckPosInPlace(pos);
-    if (sheet_list_.size() <= pos.row) {
-        return nullptr;
-    }
-    if (sheet_list_.at(pos.row).size() <= pos.col) {
-        return nullptr;
-    }
-    return sheet_list_.at(pos.row).at(pos.col).get();
 }
 
 Size Sheet::CreatePrintableSize() const {
     int row = 0;
     int col = 0;
 
-    int local_row = 0;
+    int local_row = 1;
     for (const auto& row_value : sheet_list_) {
-        local_row++;
-        int local_col = 0;
+        int local_col = 1;
         for (const auto& col_value : row_value) {
-            local_col++;
             if (col_value) {
                 if (local_col > col) {
                     col = local_col;
                 }
                 row = local_row;
             }
+            local_col++;
         }
+        local_row++;
     }
 
     return { row, col };

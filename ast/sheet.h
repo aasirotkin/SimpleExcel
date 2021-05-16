@@ -34,7 +34,6 @@ private:
 private:
     void CheckPosInPlace(Position pos) const;
     void ResizeSheetList(Position pos);
-    CellInterface* GetCellImpl(Position pos) const;
     Size CreatePrintableSize() const;
 
 private:
