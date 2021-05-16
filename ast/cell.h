@@ -70,6 +70,8 @@ class Cell : public CellInterface {
 public:
     Cell();
 
+    Cell(std::string text);
+
     ~Cell();
 
     void Set(std::string text);
@@ -79,6 +81,9 @@ public:
     Value GetValue() const override;
 
     std::string GetText() const override;
+
+private:
+    std::unique_ptr<Impl> CreateCell(std::string text);
 
 private:
     std::unique_ptr<Impl> impl_;

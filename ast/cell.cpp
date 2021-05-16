@@ -9,28 +9,21 @@ Cell::Cell()
     : impl_(std::make_unique<EmptyImpl>()) {
 }
 
+Cell::Cell(std::string text)
+    : impl_(CreateCell(std::move(text))) {
+}
+
 Cell::~Cell() {
 }
 
 void Cell::Set(std::string text) {
-    if (!text.empty()) {
-        if (impl_.get()) {
-            impl_.release();
-        }
-        if (text.size() > 1 && text.front() == FORMULA_SIGN) {
-            impl_ = std::make_unique<FormulaImpl>(std::string(text.begin() + 1, text.end()));
-        }
-        else {
-            impl_ = std::make_unique<TextImpl>(std::move(text));
-        }
-    }
-    else {
-        Clear();
-    }
+    impl_ = CreateCell(std::move(text));
 }
 
 void Cell::Clear() {
-    impl_.release();
+    if (auto* cell_ptr = impl_.release()) {
+        delete cell_ptr;
+    }
     impl_ = std::make_unique<EmptyImpl>();
 }
 
@@ -40,4 +33,16 @@ Cell::Value Cell::GetValue() const {
 
 std::string Cell::GetText() const {
     return impl_->GetText();
+}
+
+std::unique_ptr<Impl> Cell::CreateCell(std::string text) {
+    if (!text.empty()) {
+        if (text.size() > 1 && text.front() == FORMULA_SIGN) {
+            return std::make_unique<FormulaImpl>(std::string(text.begin() + 1, text.end()));
+        }
+        else {
+            return std::make_unique<TextImpl>(std::move(text));
+        }
+    }
+    return std::make_unique<EmptyImpl>();
 }
