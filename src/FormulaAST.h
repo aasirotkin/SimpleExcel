@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FormulaLexer.h"
+#include "../antlr4_formula/FormulaLexer.h"
 #include "common.h"
 
 #include <forward_list>

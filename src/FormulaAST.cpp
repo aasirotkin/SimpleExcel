@@ -1,8 +1,8 @@
 #include "FormulaAST.h"
 
-#include "FormulaBaseListener.h"
-#include "FormulaLexer.h"
-#include "FormulaParser.h"
+#include "../antlr4_formula/FormulaLexer.h"
+#include "../antlr4_formula/FormulaParser.h"
+#include "../antlr4_formula/FormulaBaseListener.h"
 
 #include <cassert>
 #include <cmath>
