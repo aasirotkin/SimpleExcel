@@ -6,41 +6,41 @@
 #include <optional>
 
 Cell::Cell()
-    : impl_(std::make_unique<EmptyImpl>()) {
+    : cell_value_(std::make_unique<cell_detail::EmptyCellValue>()) {
 }
 
 Cell::Cell(std::string text)
-    : impl_(CreateCell(std::move(text))) {
+    : cell_value_(CreateCell(std::move(text))) {
 }
 
 Cell::~Cell() {
 }
 
 void Cell::Set(std::string text) {
-    impl_ = CreateCell(std::move(text));
+    cell_value_ = CreateCell(std::move(text));
 }
 
 void Cell::Clear() {
-    impl_.reset();
-    impl_ = std::make_unique<EmptyImpl>();
+    cell_value_.reset();
+    cell_value_ = std::make_unique<cell_detail::EmptyCellValue>();
 }
 
 Cell::Value Cell::GetValue() const {
-    return impl_->GetValue();
+    return cell_value_->GetValue();
 }
 
 std::string Cell::GetText() const {
-    return impl_->GetText();
+    return cell_value_->GetText();
 }
 
-std::unique_ptr<Impl> Cell::CreateCell(std::string text) {
+std::unique_ptr<cell_detail::CellValue> Cell::CreateCell(std::string text) {
     if (!text.empty()) {
         if (text.size() > 1 && text.front() == FORMULA_SIGN) {
-            return std::make_unique<FormulaImpl>(std::string(text.begin() + 1, text.end()));
+            return std::make_unique<cell_detail::FormulaCellValue>(std::string(text.begin() + 1, text.end()));
         }
         else {
-            return std::make_unique<TextImpl>(std::move(text));
+            return std::make_unique<cell_detail::TextCellValue>(std::move(text));
         }
     }
-    return std::make_unique<EmptyImpl>();
+    return std::make_unique<cell_detail::EmptyCellValue>();
 }

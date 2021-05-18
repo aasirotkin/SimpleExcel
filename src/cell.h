@@ -3,13 +3,15 @@
 #include "common.h"
 #include "formula.h"
 
-class Impl : public CellInterface {
+namespace cell_detail {
+
+class CellValue : public CellInterface {
 public:
     void Set(std::string) override {
     }
 };
 
-class EmptyImpl : public Impl {
+class EmptyCellValue : public CellValue {
 public:
     Value GetValue() const  override {
         return Value{};
@@ -20,9 +22,9 @@ public:
     }
 };
 
-class TextImpl : public Impl {
+class TextCellValue : public CellValue {
 public:
-    TextImpl(std::string text)
+    TextCellValue(std::string text)
         : text_(std::move(text)) {
     }
 
@@ -38,7 +40,7 @@ private:
     std::string text_;
 };
 
-struct ValueConverter {
+struct CellValueConverter {
     CellInterface::Value operator() (double d) {
         return d;
     }
@@ -48,14 +50,14 @@ struct ValueConverter {
     }
 };
 
-class FormulaImpl : public Impl {
+class FormulaCellValue : public CellValue {
 public:
-    FormulaImpl(std::string text)
+    FormulaCellValue(std::string text)
         : formula_(ParseFormula(std::move(text))) {
     }
 
     Value GetValue() const  override {
-        return std::visit(ValueConverter{}, formula_->Evaluate());
+        return std::visit(CellValueConverter{}, formula_->Evaluate());
     }
 
     std::string GetText() const override {
@@ -66,6 +68,8 @@ private:
     std::unique_ptr<FormulaInterface> formula_;
 };
 
+} // namespace cell_detail
+
 class Cell : public CellInterface {
 public:
     Cell();
@@ -74,7 +78,7 @@ public:
 
     ~Cell();
 
-    void Set(std::string text);
+    void Set(std::string text) override;
 
     void Clear();
 
@@ -83,8 +87,8 @@ public:
     std::string GetText() const override;
 
 private:
-    std::unique_ptr<Impl> CreateCell(std::string text);
+    std::unique_ptr<cell_detail::CellValue> CreateCell(std::string text);
 
 private:
-    std::unique_ptr<Impl> impl_;
+    std::unique_ptr<cell_detail::CellValue> cell_value_;
 };

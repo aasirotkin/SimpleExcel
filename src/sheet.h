@@ -28,10 +28,6 @@ public:
     void PrintTexts(std::ostream& output) const override;
 
 private:
-    using ColToPtrValue = std::map<int, const CellInterface*>;
-    using SheetListValues = std::map<int, ColToPtrValue>;
-
-private:
     void CheckPosInPlace(Position pos) const;
     void ResizeSheetList(Position pos);
     Size CreatePrintableSize() const;

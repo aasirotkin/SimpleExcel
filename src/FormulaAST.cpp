@@ -325,36 +325,37 @@ public:
 }  // namespace ASTImpl
 
 FormulaAST ParseFormulaAST(std::istream& in) {
-    using namespace antlr4;
+    try {
+        using namespace antlr4;
 
-    ANTLRInputStream input(in);
+        ANTLRInputStream input(in);
 
-    FormulaLexer lexer(&input);
-    ASTImpl::BailErrorListener error_listener;
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(&error_listener);
+        FormulaLexer lexer(&input);
+        ASTImpl::BailErrorListener error_listener;
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(&error_listener);
 
-    CommonTokenStream tokens(&lexer);
+        CommonTokenStream tokens(&lexer);
 
-    FormulaParser parser(&tokens);
-    auto error_handler = std::make_shared<BailErrorStrategy>();
-    parser.setErrorHandler(error_handler);
-    parser.removeErrorListeners();
+        FormulaParser parser(&tokens);
+        auto error_handler = std::make_shared<BailErrorStrategy>();
+        parser.setErrorHandler(error_handler);
+        parser.removeErrorListeners();
 
-    tree::ParseTree* tree = parser.main();
-    ASTImpl::ParseASTListener listener;
-    tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
+        tree::ParseTree* tree = parser.main();
+        ASTImpl::ParseASTListener listener;
+        tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
 
-    return FormulaAST(listener.MoveRoot());
+        return FormulaAST(listener.MoveRoot());
+    }
+    catch (const std::exception& exc) {
+        std::throw_with_nested(FormulaException(exc.what()));
+    }
 }
 
 FormulaAST ParseFormulaAST(const std::string& in_str) {
     std::istringstream in(in_str);
-    try {
-        return ParseFormulaAST(in);
-    } catch (const std::exception& exc) {
-        std::throw_with_nested(FormulaException(exc.what()));
-    }
+    return ParseFormulaAST(in);
 }
 
 void FormulaAST::Print(std::ostream& out) const {
