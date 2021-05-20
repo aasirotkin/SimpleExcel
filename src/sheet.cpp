@@ -23,7 +23,7 @@ void Sheet::SetCell(Position pos, std::string text) {
     }
     else {
         ResizeSheetList(pos);
-        sheet_list_.at(pos.row).at(pos.col) = std::make_unique<Cell>(std::move(text));
+        sheet_list_.at(pos.row).at(pos.col) = std::make_unique<Cell>(std::move(text), *this);
     }
 }
 

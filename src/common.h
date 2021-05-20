@@ -2,22 +2,56 @@
 
 #include "position.h"
 
+#include <cassert>
 #include <iosfwd>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <variant>
+#include <vector>
 
 // Описывает ошибки, которые могут возникнуть при вычислении формулы.
-class FormulaError : public std::runtime_error {
+class FormulaError {
 public:
-    using std::runtime_error::runtime_error;
+    enum class Category {
+        Ref,    // ссылка на ячейку с некорректной позицией
+        Value,  // ячейка не может быть трактована как число
+        Div0,   // в результате вычисления возникло деление на ноль
+    };
 
-    static void ThrowDivByZeroError() {
-        throw FormulaError("DIV/0");
+    FormulaError(Category category)
+        : category_(category) {
     }
+
+    Category GetCategory() const {
+        return category_;
+    }
+
+    bool operator==(FormulaError rhs) const {
+        return category_ == rhs.category_;
+    }
+
+    std::string_view ToString() const {
+        using namespace std::literals;
+        switch (category_) {
+        case Category::Ref: return "#REF!"sv;
+        case Category::Value: return "#VALUE!"sv;
+        case Category::Div0: return "#DIV0!"sv;
+        default:
+            assert(false);
+        }
+    }
+
+    std::string_view what() const {
+        return ToString();
+    }
+
+private:
+    Category category_;
 };
+
+std::ostream& operator<<(std::ostream& output, FormulaError fe);
 
 // Исключение, выбрасываемое при попытке задать синтаксически некорректную
 // формулу
@@ -39,7 +73,12 @@ public:
     using std::runtime_error::runtime_error;
 };
 
-std::ostream& operator<<(std::ostream& output, FormulaError fe);
+// Исключение, выбрасываемое при попытке задать формулу, которая приводит к
+// циклической зависимости между ячейками
+class CircularDependencyException : public std::runtime_error {
+public:
+    using std::runtime_error::runtime_error;
+};
 
 struct Size {
     int rows = 0;
@@ -79,6 +118,11 @@ public:
     // редактирование. В случае текстовой ячейки это её текст (возможно,
     // содержащий экранирующие символы). В случае формулы - её выражение.
     virtual std::string GetText() const = 0;
+
+    // Возвращает список ячеек, которые непосредственно задействованы в данной
+    // формуле. Список отсортирован по возрастанию и не содержит повторяющихся
+    // ячеек. В случае текстовой ячейки список пуст.
+    virtual std::vector<Position> GetReferencedCells() const = 0;
 };
 
 // Интерфейс таблицы
@@ -86,7 +130,16 @@ class SheetInterface {
 public:
     virtual ~SheetInterface() = default;
 
-    // Задаёт содержимое ячейки.
+    // Задаёт содержимое ячейки. Если текст начинается со знака "=", то он
+    // интерпретируется как формула. Если задаётся синтаксически некорректная
+    // формула, то бросается исключение FormulaException и значение ячейки не
+    // изменяется. Если задаётся формула, которая приводит к циклической
+    // зависимости (в частности, если формула использует текущую ячейку), то
+    // бросается исключение CircularDependencyException и значение ячейки не
+    // изменяется.
+    // Уточнения по записи формулы:
+    // * Если текст содержит только символ "=" и больше ничего, то он не считается
+    // формулой
     // * Если текст начинается с символа "'" (апостроф), то при выводе значения
     // ячейки методом GetValue() он опускается. Можно использовать, если нужно
     // начать текст со знака "=", но чтобы он не интерпретировался как формула.
