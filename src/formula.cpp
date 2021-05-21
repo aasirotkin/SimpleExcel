@@ -80,6 +80,7 @@ private:
             return ParseFormulaAST(in);
         }
         catch (const std::exception& e) {
+            // TODO: fix this problem, there should be Ref error
             throw FormulaException(e.what());
         }
     }

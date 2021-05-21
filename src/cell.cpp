@@ -101,16 +101,18 @@ bool Cell::CellHasCircularDependency(const Cell const* self, const std::unique_p
     if (current_cell_value->GetCellValueType() == cell_detail::CellValueInterface::CellValueType::Formula) {
         for (const Position& pos : dynamic_cast<cell_detail::FormulaCellValue*>(current_cell_value.get())->GetReferencedCells()) {
             const Cell* cell = dynamic_cast<const Cell*>(sheet_.GetCell(pos));
+            if (self == cell) {
+                return true;
+            }
             if (!cell) {
                 sheet_.SetCell(pos, "");
                 cell = dynamic_cast<const Cell*>(sheet_.GetCell(pos));
             }
             if (!visited_cells.count(cell)) {
                 visited_cells.insert(cell);
-                return cell->CellHasCircularDependency(self, cell->cell_value_, visited_cells);
-            }
-            else {
-                return true;
+                if (cell->CellHasCircularDependency(self, cell->cell_value_, visited_cells)) {
+                    return true;
+                }
             }
         }
     }

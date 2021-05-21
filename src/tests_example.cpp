@@ -144,6 +144,10 @@ void TestPosition() {
 
 void SetCellValue(const std::string& value, Position pos, Sheet& sheet) {
     CellInterface* ci = sheet.GetCell(pos);
+    if (!ci) {
+        sheet.SetCell(pos, value);
+        ci = sheet.GetCell(pos);
+    }
     dynamic_cast<Cell*>(ci)->Set(value);
 }
 
@@ -182,6 +186,7 @@ void TestSimpleCircularDependecies() {
 
     try {
         sheet.SetCell(e5, "= B2 / C3 - D4 + A1"s);
+        ASSERT(false);
     }
     catch (const CircularDependencyException& exp) {
     }
@@ -218,6 +223,88 @@ void TestSimpleDependecies() {
     std::visit(CellValueChecker{ "3" }, sheet.GetCell(a1)->GetValue());
     std::visit(CellValueChecker{ 3.0 }, sheet.GetCell(a2)->GetValue());
     std::visit(CellValueChecker{ 6.0 }, sheet.GetCell(a3)->GetValue());
+
+    SetCellValue("=A3 - A2"s, a1, sheet);
+
+    ASSERT(sheet.GetCell(a1)->GetReferencedCells().size() == 2);
+    ASSERT(sheet.GetCell(a2)->GetReferencedCells().empty());
+    ASSERT(sheet.GetCell(a3)->GetReferencedCells().size() == 1);
+
+    std::visit(CellValueChecker{ 3.0 }, sheet.GetCell(a1)->GetValue());
+    std::visit(CellValueChecker{ 3.0 }, sheet.GetCell(a2)->GetValue());
+    std::visit(CellValueChecker{ 6.0 }, sheet.GetCell(a3)->GetValue());
+}
+
+void TestCommonCases() {
+    Sheet sheet;
+
+#define CREATE_CELL(a) \
+    Position a = Position::FromString(#a);
+
+    CREATE_CELL(A1);
+    CREATE_CELL(C5);
+    CREATE_CELL(D8);
+    CREATE_CELL(E3);
+    CREATE_CELL(B16);
+    CREATE_CELL(F4);
+    CREATE_CELL(O54);
+    CREATE_CELL(J36);
+    CREATE_CELL(K15);
+    CREATE_CELL(AA33);
+    CREATE_CELL(CB15);
+
+    SetCellValue("=7"s, C5, sheet);
+    SetCellValue("=C5*A1"s, D8, sheet);
+
+    ASSERT(sheet.GetCell(A1)->GetReferencedCells().size() == 0);
+    ASSERT(sheet.GetCell(C5)->GetReferencedCells().size() == 0);
+    ASSERT(sheet.GetCell(D8)->GetReferencedCells().size() == 2);
+
+    std::visit(CellValueChecker{ 0.0 }, sheet.GetCell(D8)->GetValue());
+
+    SetCellValue("=D8/A1"s, E3, sheet);
+
+    ASSERT(sheet.GetCell(E3)->GetReferencedCells().size() == 3);
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(E3)->GetValue());
+
+    SetCellValue("Hello"s, B16, sheet);
+    ASSERT(sheet.GetCell(B16)->GetReferencedCells().size() == 0);
+    std::visit(CellValueChecker{ "Hello"s }, sheet.GetCell(B16)->GetValue());
+
+    SetCellValue("=B16 - 1"s, F4, sheet);
+    ASSERT(sheet.GetCell(F4)->GetReferencedCells().size() == 1);
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(F4)->GetValue());
+
+    //SetCellValue("=FFFF4 - 1"s, O54, sheet);
+    //ASSERT(sheet.GetCell(O54)->GetReferencedCells().size() == 1);
+    //std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(O54)->GetValue());
+
+    //SetCellValue("=A1234567 - 1"s, J36, sheet);
+    //ASSERT(sheet.GetCell(J36)->GetReferencedCells().size() == 1);
+    //std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(J36)->GetValue());
+
+    SetCellValue("13"s, K15, sheet);
+    ASSERT(sheet.GetCell(K15)->GetReferencedCells().size() == 0);
+
+    SetCellValue("=(K15 - 10) * C5"s, AA33, sheet);
+    ASSERT(sheet.GetCell(AA33)->GetReferencedCells().size() == 2);
+    std::visit(CellValueChecker{ 21.0 }, sheet.GetCell(AA33)->GetValue());
+
+    SetCellValue("=AA33 * 2"s, CB15, sheet);
+    ASSERT(sheet.GetCell(CB15)->GetReferencedCells().size() == 3);
+    std::visit(CellValueChecker{ 42.0 }, sheet.GetCell(CB15)->GetValue());
+
+    try {
+        SetCellValue("=CB15 / 2"s, K15, sheet);
+        ASSERT(false);
+    }
+    catch (const CircularDependencyException& exp) {
+        ASSERT(sheet.GetCell(K15)->GetReferencedCells().size() == 0);
+        std::visit(CellValueChecker{ "13" }, sheet.GetCell(K15)->GetValue());
+    }
+    catch (...) {
+        ASSERT(false);
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -230,4 +317,5 @@ void Tests() {
     RUN_TEST(tr, TestPosition);
     RUN_TEST(tr, TestSimpleCircularDependecies);
     RUN_TEST(tr, TestSimpleDependecies);
+    RUN_TEST(tr, TestCommonCases);
 }

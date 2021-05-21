@@ -58,6 +58,7 @@ public:
     }
 
     Value GetValue() const  override {
+        // TODO: think of ESCAPE_SIGN
         return (!text_.empty() && text_.front() == ESCAPE_SIGN) ? std::string(text_.begin() + 1, text_.end()) : text_;
     }
 
