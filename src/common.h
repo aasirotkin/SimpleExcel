@@ -40,6 +40,7 @@ public:
         case Category::Div0: return "#DIV0!"sv;
         default:
             assert(false);
+            return "";
         }
     }
 
@@ -107,7 +108,7 @@ public:
     // * Если текст начинается с символа "'" (апостроф), то при выводе значения
     // ячейки методом GetValue() он опускается. Можно использовать, если нужно
     // начать текст со знака "=", но чтобы он не интерпретировался как формула.
-    virtual void Set(std::string text) = 0;
+    //virtual void Set(std::string text) = 0;
 
     // Возвращает видимое значение ячейки.
     // В случае текстовой ячейки это её текст (без экранирующих символов). В
@@ -124,6 +125,8 @@ public:
     // ячеек. В случае текстовой ячейки список пуст.
     virtual std::vector<Position> GetReferencedCells() const = 0;
 };
+
+//std::ostream& operator<<(std::ostream& output, const CellInterface::Value& value);
 
 // Интерфейс таблицы
 class SheetInterface {

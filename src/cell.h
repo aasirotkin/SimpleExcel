@@ -4,19 +4,43 @@
 
 #include "common.h"
 #include "formula.h"
+#include <unordered_set>
+
+class Cell;
 
 namespace cell_detail {
 
 class CellValueInterface {
 public:
     using Value = CellInterface::Value;
+
+    enum class CellValueType {
+        Empty,
+        Text,
+        Formula
+    };
+
+public:
+    explicit CellValueInterface(CellValueType type)
+        : type_(type) {
+    }
     virtual ~CellValueInterface() = default;
     virtual Value GetValue() const = 0;
     virtual std::string GetText() const = 0;
+    CellValueType GetCellValueType() const {
+        return type_;
+    }
+
+private:
+    CellValueType type_;
 };
 
 class EmptyCellValue : public CellValueInterface {
 public:
+    EmptyCellValue()
+        : CellValueInterface(CellValueInterface::CellValueType::Empty) {
+    }
+
     Value GetValue() const override {
         return 0.0;
     }
@@ -29,7 +53,8 @@ public:
 class TextCellValue : public CellValueInterface {
 public:
     TextCellValue(std::string text)
-        : text_(std::move(text)) {
+        : text_(std::move(text))
+        , CellValueInterface(CellValueInterface::CellValueType::Text) {
     }
 
     Value GetValue() const  override {
@@ -56,10 +81,10 @@ struct CellValueConverter {
 
 class FormulaCellValue : public CellValueInterface {
 public:
-    FormulaCellValue(std::string text, const SheetInterface& sheet)
+    FormulaCellValue(std::string text, Cell* self, SheetInterface& sheet)
         : formula_(ParseFormula(std::move(text)))
-        , sheet_(sheet) {
-        //TODO: fill referenced_cells_ and binding_cells_
+        , sheet_(sheet)
+        , CellValueInterface(CellValueInterface::CellValueType::Formula) {
     }
 
     Value GetValue() const  override {
@@ -77,19 +102,13 @@ public:
         cache_value_.reset();
     }
 
-    const std::vector<Position>& GetReferencedCells() const {
-        return referenced_cells_;
-    }
-
-    const std::vector<Position>& GetBindingCells() const {
-        return binding_cells_;
+    std::vector<Position> GetReferencedCells() const {
+        return formula_->GetReferencedCells();
     }
 
 private:
     std::unique_ptr<FormulaInterface> formula_;
-    const SheetInterface& sheet_;
-    std::vector<Position> referenced_cells_;
-    std::vector<Position> binding_cells_;
+    SheetInterface& sheet_;
     mutable std::optional<Value> cache_value_;
 };
 
@@ -97,13 +116,13 @@ private:
 
 class Cell : public CellInterface {
 public:
-    Cell(const SheetInterface& sheet);
+    Cell(SheetInterface& sheet);
 
-    Cell(std::string text, const SheetInterface& sheet);
+    Cell(std::string text, SheetInterface& sheet);
 
     ~Cell();
 
-    void Set(std::string text) override;
+    void Set(std::string text);
 
     void Clear();
 
@@ -111,21 +130,36 @@ public:
 
     std::string GetText() const override;
 
-    std::vector<Position> GetReferencedCells() const override {
-        if (const cell_detail::FormulaCellValue* formula_ptr = dynamic_cast<const cell_detail::FormulaCellValue*>(cell_value_.get())) {
-            return formula_ptr->GetReferencedCells();
-        }
-        return {};
+    std::vector<Position> GetReferencedCells() const override;
+
+    bool IsReferenced() const;
+
+private:
+    void CreateReferencedCellsInPlace(std::vector<Position>& referenced_cells, std::unordered_set<const Cell*>& visited_cells) const;
+
+    bool CellHasCircularDependency(const Cell const* self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const;
+
+    void InvalidateBindingCache(std::unordered_set<const Cell*>& visited_cells) const;
+
+    void InvalidateCache() const;
+
+    void UnbindReferencedDependency() const;
+
+    void UnbindCell(const Cell* cell) const {
+        binding_cells_.erase(cell);
     }
 
-    bool IsReferenced() const {
-        return !GetReferencedCells().empty();
+    void BindCell(const Cell* cell) const {
+        binding_cells_.insert(cell);
     }
+
+    void BindingReferencedDependency() const;
 
 private:
     std::unique_ptr<cell_detail::CellValueInterface> CreateCell(std::string text);
 
 private:
-    const SheetInterface& sheet_;
+    SheetInterface& sheet_;
     std::unique_ptr<cell_detail::CellValueInterface> cell_value_;
+    mutable std::unordered_set<const Cell*> binding_cells_;
 };

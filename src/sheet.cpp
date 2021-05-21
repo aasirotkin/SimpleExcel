@@ -18,8 +18,9 @@ Sheet::~Sheet() {
 
 void Sheet::SetCell(Position pos, std::string text) {
     CheckPosInPlace(pos);
+
     if (auto* cell = GetCell(pos)) {
-        cell->Set(std::move(text));
+        dynamic_cast<Cell*>(cell)->Set(std::move(text));
     }
     else {
         ResizeSheetList(pos);
@@ -126,6 +127,8 @@ Size Sheet::CreatePrintableSize() const {
 
     return { row, col };
 }
+
+// -----------------------------------------------------------------------------
 
 std::unique_ptr<SheetInterface> CreateSheet() {
     return std::make_unique<Sheet>();

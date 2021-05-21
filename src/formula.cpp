@@ -20,6 +20,25 @@ std::ostream& operator<<(std::ostream& output, FormulaError fe) {
 
 namespace {
 
+struct FormulaValueGetter {
+    double operator() (const std::string& value) {
+        try {
+            return std::stod(value);
+        }
+        catch (...) {
+            throw FormulaError(FormulaError::Category::Value);
+        }
+    }
+
+    double operator() (double value) {
+        return value;
+    }
+
+    double operator() (const FormulaError& value) {
+        throw value;
+    }
+};
+
 class Formula : public FormulaInterface {
 public:
 // Реализуйте следующие методы:
@@ -30,10 +49,11 @@ public:
 
     Value Evaluate(const SheetInterface& sheet) const override {
         try {
-            return ast_.Execute([&sheet](const Position& pos) {
-                //TODO: look through all cases
-                return 0.0;
-                });
+            return ast_.Execute(
+                [&sheet](const Position& pos) {
+                    return std::visit(FormulaValueGetter{}, sheet.GetCell(pos)->GetValue());
+                }
+            );
         }
         catch (FormulaError& e) {
             return std::move(e);
