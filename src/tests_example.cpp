@@ -16,10 +16,6 @@ inline std::ostream& operator<<(std::ostream& output, Position pos) {
     return output << "(" << pos.row << ", " << pos.col << ")";
 }
 
-inline Position operator"" _pos(const char* str, std::size_t) {
-    return Position::FromString(str);
-}
-
 inline std::ostream& operator<<(std::ostream& output, Size size) {
     return output << "(" << size.rows << ", " << size.cols << ")";
 }

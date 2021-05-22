@@ -158,7 +158,7 @@ public:
 private:
     void CreateReferencedCellsInPlace(std::vector<Position>& referenced_cells, std::unordered_set<const Cell*>& visited_cells) const;
 
-    bool CellHasCircularDependency(const Cell* const self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const;
+    bool HasCellCircularDependency(const Cell* const self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const;
 
     void InvalidateBindingCache(std::unordered_set<const Cell*>& visited_cells) const;
 

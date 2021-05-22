@@ -20,7 +20,7 @@ Cell::~Cell() {
 void Cell::Set(std::string text) {
     std::unique_ptr<cell_detail::CellValueInterface> new_cell_value = CreateCell(std::move(text));
     std::unordered_set<const Cell*> visited_cells = { this };
-    if (CellHasCircularDependency(this, new_cell_value, visited_cells)) {
+    if (HasCellCircularDependency(this, new_cell_value, visited_cells)) {
         throw CircularDependencyException("Cell has circular dependency exception");
     }
     Clear();
@@ -87,7 +87,7 @@ void Cell::CreateReferencedCellsInPlace(std::vector<Position>& referenced_cells,
     }
 }
 
-bool Cell::CellHasCircularDependency(const Cell* const self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const {
+bool Cell::HasCellCircularDependency(const Cell* const self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const {
     if (current_cell_value->GetCellValueType() == cell_detail::CellValueInterface::CellValueType::Formula) {
         for (const Position& pos : dynamic_cast<cell_detail::FormulaCellValue*>(current_cell_value.get())->GetReferencedCells()) {
             const Cell* cell = dynamic_cast<const Cell*>(sheet_.GetCell(pos));
@@ -100,7 +100,7 @@ bool Cell::CellHasCircularDependency(const Cell* const self, const std::unique_p
             }
             if (!visited_cells.count(cell)) {
                 visited_cells.insert(cell);
-                if (cell->CellHasCircularDependency(self, cell->cell_value_, visited_cells)) {
+                if (cell->HasCellCircularDependency(self, cell->cell_value_, visited_cells)) {
                     return true;
                 }
             }
