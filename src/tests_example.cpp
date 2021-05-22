@@ -432,6 +432,87 @@ void TestPrintableSize() {
     ASSERT_EQUAL(sheet.GetPrintableSize(), (Size{ 2, 1 }));
 }
 
+void TestCircularDependecies() {
+    Sheet sheet;
+
+#define CREATE_CELL(a) \
+    Position a = Position::FromString(#a);
+
+    CREATE_CELL(A1);
+    CREATE_CELL(B1);
+    CREATE_CELL(C100);
+    CREATE_CELL(EG300);
+    CREATE_CELL(C5);
+    CREATE_CELL(B777);
+
+    sheet.SetCell(A1, "=B1"s);
+    sheet.SetCell(B1, "=C100"s);
+    sheet.SetCell(C100, "=EG300"s);
+    sheet.SetCell(EG300, "=C5"s);
+    sheet.SetCell(C5, "=B777"s);
+
+    try {
+        sheet.SetCell(B777, "=A1"s);
+        ASSERT(false);
+    }
+    catch (const CircularDependencyException& exp) {
+        ASSERT(sheet.GetCell(B777)->GetReferencedCells().size() == 0);
+        std::visit(CellValueChecker{ 0.0 }, sheet.GetCell(B777)->GetValue());
+    }
+    catch (...) {
+        ASSERT(false);
+    }
+}
+
+void TestCircularDependeciesPlatform() {
+    Sheet sheet;
+
+#define CREATE_CELL(a) \
+    Position a = Position::FromString(#a);
+
+    CREATE_CELL(A2);
+    CREATE_CELL(C2);
+    CREATE_CELL(A3);
+    CREATE_CELL(C4);
+
+    sheet.SetCell(A2, "3"s);
+    sheet.SetCell(C2, "=A3/A2"s);
+    sheet.SetCell(C4, "=C2 + 8"s);
+
+    try {
+        sheet.SetCell(A3, "=C4 - 1"s);
+        ASSERT(false);
+    }
+    catch (const CircularDependencyException& exp) {
+        ASSERT(sheet.GetCell(A3)->GetReferencedCells().size() == 0);
+        std::visit(CellValueChecker{ 0.0 }, sheet.GetCell(A3)->GetValue());
+    }
+    catch (...) {
+        ASSERT(false);
+    }
+}
+
+void TestCircularDependeciesOneMoreTime() {
+    Sheet sheet;
+
+#define CREATE_CELL(a) \
+    Position a = Position::FromString(#a);
+
+    CREATE_CELL(A2);
+
+    try {
+        sheet.SetCell(A2, "=A2"s);
+        ASSERT(false);
+    }
+    catch (const CircularDependencyException& exp) {
+        ASSERT(sheet.GetCell(A2)->GetReferencedCells().size() == 0);
+        std::visit(CellValueChecker{ 0.0 }, sheet.GetCell(A2)->GetValue());
+    }
+    catch (...) {
+        ASSERT(false);
+    }
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace
@@ -446,4 +527,7 @@ void Tests() {
     RUN_TEST(tr, TestErrorDependencies);
     RUN_TEST(tr, TestDivByZero);
     RUN_TEST(tr, TestPrintableSize);
+    RUN_TEST(tr, TestCircularDependecies);
+    RUN_TEST(tr, TestCircularDependeciesPlatform);
+    RUN_TEST(tr, TestCircularDependeciesOneMoreTime);
 }
