@@ -108,7 +108,7 @@ void Cell::CreateReferencedCellsInPlace(std::vector<Position>& referenced_cells,
     }
 }
 
-bool Cell::CellHasCircularDependency(const Cell const* self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const {
+bool Cell::CellHasCircularDependency(const Cell* const self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const {
     if (current_cell_value->GetCellValueType() == cell_detail::CellValueInterface::CellValueType::Formula) {
         for (const Position& pos : dynamic_cast<cell_detail::FormulaCellValue*>(current_cell_value.get())->GetReferencedCells()) {
             const Cell* cell = dynamic_cast<const Cell*>(sheet_.GetCell(pos));

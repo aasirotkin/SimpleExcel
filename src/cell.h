@@ -58,8 +58,8 @@ public:
 class TextCellValue : public CellValueInterface {
 public:
     TextCellValue(std::string text)
-        : text_(std::move(text))
-        , CellValueInterface(CellValueInterface::CellValueType::Text) {
+        : CellValueInterface(CellValueInterface::CellValueType::Text)
+        , text_(std::move(text)) {
     }
 
     Value GetValue() const  override {
@@ -91,9 +91,9 @@ struct CellValueConverter {
 class FormulaCellValue : public CellValueInterface {
 public:
     FormulaCellValue(std::string text, Cell* self, SheetInterface& sheet)
-        : formula_(ParseFormula(std::move(text)))
-        , sheet_(sheet)
-        , CellValueInterface(CellValueInterface::CellValueType::Formula) {
+        : CellValueInterface(CellValueInterface::CellValueType::Formula)
+        , formula_(ParseFormula(std::move(text)))
+        , sheet_(sheet) {
     }
 
     Value GetValue() const  override {
@@ -158,7 +158,7 @@ public:
 private:
     void CreateReferencedCellsInPlace(std::vector<Position>& referenced_cells, std::unordered_set<const Cell*>& visited_cells) const;
 
-    bool CellHasCircularDependency(const Cell const* self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const;
+    bool CellHasCircularDependency(const Cell* const self, const std::unique_ptr<cell_detail::CellValueInterface>& current_cell_value, std::unordered_set<const Cell*>& visited_cells) const;
 
     void InvalidateBindingCache(std::unordered_set<const Cell*>& visited_cells) const;
 
