@@ -386,6 +386,52 @@ void TestErrorDependencies() {
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A5)->GetValue());
 }
 
+void TestDivByZero() {
+    Sheet sheet;
+
+#define CREATE_CELL(a) \
+    Position a = Position::FromString(#a);
+
+    CREATE_CELL(A1);
+    CREATE_CELL(C2);
+    CREATE_CELL(F15);
+
+    sheet.SetCell(A1, "=3 + 4 * (2 - 1/C2)"s);
+    sheet.SetCell(C2, "=333 - (19 / 19) * F15"s);
+    sheet.SetCell(F15, "=333"s);
+
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A1)->GetValue());
+    ASSERT_EQUAL("=3+4*(2-1/C2)"s, sheet.GetCell(A1)->GetText());
+}
+
+void TestPrintableSize() {
+    Sheet sheet;
+
+#define CREATE_CELL(a) \
+    Position a = Position::FromString(#a);
+
+    CREATE_CELL(A2);
+    CREATE_CELL(B2);
+    CREATE_CELL(A1);
+
+    sheet.SetCell(A2, "meow"s);
+    sheet.SetCell(B2, "=1 + 2"s);
+    sheet.SetCell(A1, "= 4 / 0"s);
+
+    ASSERT_EQUAL(sheet.GetPrintableSize(), (Size{ 2,2 }));
+
+    std::ostringstream texts;
+    sheet.PrintTexts(texts);
+    ASSERT_EQUAL(texts.str(), "=4/0\t\nmeow\t=1+2\n");
+
+    std::ostringstream values;
+    sheet.PrintValues(values);
+    ASSERT_EQUAL(values.str(), "#DIV/0!\t\nmeow\t3\n");
+
+    sheet.ClearCell(B2);
+    ASSERT_EQUAL(sheet.GetPrintableSize(), (Size{ 2, 1 }));
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace
@@ -398,4 +444,6 @@ void Tests() {
     RUN_TEST(tr, TestSimpleDependecies);
     RUN_TEST(tr, TestCommonCases);
     RUN_TEST(tr, TestErrorDependencies);
+    RUN_TEST(tr, TestDivByZero);
+    RUN_TEST(tr, TestPrintableSize);
 }

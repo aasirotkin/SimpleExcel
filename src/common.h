@@ -37,7 +37,7 @@ public:
         switch (category_) {
         case Category::Ref: return "#REF!"sv;
         case Category::Value: return "#VALUE!"sv;
-        case Category::Div0: return "#DIV0!"sv;
+        case Category::Div0: return "#DIV/0!"sv;
         default:
             assert(false);
             return "";
