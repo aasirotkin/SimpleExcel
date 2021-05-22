@@ -126,8 +126,6 @@ public:
     virtual std::vector<Position> GetReferencedCells() const = 0;
 };
 
-//std::ostream& operator<<(std::ostream& output, const CellInterface::Value& value);
-
 // Интерфейс таблицы
 class SheetInterface {
 public:

@@ -5,27 +5,6 @@
 #include <string>
 #include <optional>
 
-//struct CellPrinter {
-//    void operator() (const std::string& value) {
-//        output << value;
-//    }
-//
-//    void operator() (double value) {
-//        output << value;
-//    }
-//
-//    void operator() (FormulaError value) {
-//        output << value.ToString();
-//    }
-//
-//    std::ostream& output;
-//};
-
-//std::ostream& operator<<(std::ostream& output, const CellInterface::Value& value) {
-//    std::visit(CellPrinter{ output }, value);
-//    return output;
-//}
-
 Cell::Cell(SheetInterface& sheet)
     : Cell("", sheet) {
 }

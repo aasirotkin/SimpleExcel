@@ -370,9 +370,9 @@ public:
     }
 };
 
-}  // namespace
+} // namespace
 
-}  // namespace ASTImpl
+} // namespace ASTImpl
 
 // -----------------------------------------------------------------------------
 

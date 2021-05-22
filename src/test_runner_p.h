@@ -23,7 +23,7 @@ std::ostream& PrintMap(std::ostream& os, const Map& m) {
     }
     return os << "}";
 }
-}  // namespace TestRunnerPrivate
+} // namespace TestRunnerPrivate
 
 template <class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& s) {
