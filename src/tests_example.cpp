@@ -151,6 +151,14 @@ void SetCellValue(const std::string& value, Position pos, Sheet& sheet) {
     dynamic_cast<Cell*>(ci)->Set(value);
 }
 
+void CheckCache(bool value, Position pos, Sheet& sheet) {
+    CellInterface* ci = sheet.GetCell(pos);
+    if (!ci) {
+        ASSERT(false);
+    }
+    ASSERT_EQUAL(dynamic_cast<Cell*>(ci)->IsCacheValie(), value);
+}
+
 struct CellValueChecker {
     void operator() (const std::string& value) {
         ASSERT(std::holds_alternative<std::string>(expected_value));
@@ -325,13 +333,31 @@ void TestErrorDependencies() {
     SetCellValue("=A1"s, A2, sheet);
     SetCellValue("'7"s, A1, sheet);
 
+    CheckCache(false, A5, sheet);
+    CheckCache(false, A4, sheet);
+    CheckCache(false, A3, sheet);
+    CheckCache(false, A2, sheet);
+    CheckCache(false, A1, sheet);
+
     std::visit(CellValueChecker{ "7" }, sheet.GetCell(A1)->GetValue());
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(A2)->GetValue());
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(A3)->GetValue());
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(A4)->GetValue());
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(A5)->GetValue());
 
+    CheckCache(true, A5, sheet);
+    CheckCache(true, A4, sheet);
+    CheckCache(true, A3, sheet);
+    CheckCache(true, A2, sheet);
+    CheckCache(false, A1, sheet); // A1 has string type
+
     SetCellValue("=ZZZZ13"s, A1, sheet);
+
+    CheckCache(false, A5, sheet);
+    CheckCache(false, A4, sheet);
+    CheckCache(false, A3, sheet);
+    CheckCache(false, A2, sheet);
+    CheckCache(false, A1, sheet);
 
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A1)->GetValue());
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A2)->GetValue());
@@ -339,7 +365,19 @@ void TestErrorDependencies() {
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A4)->GetValue());
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A5)->GetValue());
 
+    CheckCache(true, A5, sheet);
+    CheckCache(true, A4, sheet);
+    CheckCache(true, A3, sheet);
+    CheckCache(true, A2, sheet);
+    CheckCache(true, A1, sheet);
+
     SetCellValue("=1/0"s, A1, sheet);
+
+    CheckCache(false, A5, sheet);
+    CheckCache(false, A4, sheet);
+    CheckCache(false, A3, sheet);
+    CheckCache(false, A2, sheet);
+    CheckCache(false, A1, sheet);
 
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A1)->GetValue());
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A2)->GetValue());

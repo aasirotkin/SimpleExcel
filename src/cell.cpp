@@ -88,6 +88,13 @@ bool Cell::IsReferenced() const {
     return false;
 }
 
+bool Cell::IsCacheValie() const {
+    if (cell_value_->GetCellValueType() == cell_detail::CellValueInterface::CellValueType::Formula) {
+        return dynamic_cast<cell_detail::FormulaCellValue*>(cell_value_.get())->IsCacheValid();
+    }
+    return false;
+}
+
 void Cell::CreateReferencedCellsInPlace(std::vector<Position>& referenced_cells, std::unordered_set<const Cell*>& visited_cells) const {
     if (cell_value_->GetCellValueType() == cell_detail::CellValueInterface::CellValueType::Formula) {
         for (const Position& pos : dynamic_cast<cell_detail::FormulaCellValue*>(cell_value_.get())->GetReferencedCells()) {

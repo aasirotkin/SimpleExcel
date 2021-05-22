@@ -119,6 +119,10 @@ public:
         return formula_->GetReferencedCells();
     }
 
+    bool IsCacheValid() const {
+        return cache_value_.has_value();
+    }
+
 private:
     std::unique_ptr<FormulaInterface> formula_;
     SheetInterface& sheet_;
@@ -148,6 +152,8 @@ public:
     std::vector<Position> GetReferencedCells() const override;
 
     bool IsReferenced() const;
+
+    bool IsCacheValie() const;
 
 private:
     void CreateReferencedCellsInPlace(std::vector<Position>& referenced_cells, std::unordered_set<const Cell*>& visited_cells) const;
