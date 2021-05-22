@@ -1,5 +1,6 @@
 #include "formula.h"
 
+#include "cell.h"
 #include "FormulaAST.h"
 
 #include <algorithm>
@@ -51,7 +52,8 @@ public:
         try {
             return ast_.Execute(
                 [&sheet](const Position& pos) {
-                    return std::visit(FormulaValueGetter{}, sheet.GetCell(pos)->GetValue());
+                    const auto* cell = dynamic_cast<const Cell*>(sheet.GetCell(pos));
+                    return std::visit(FormulaValueGetter{}, cell->GetRawValue());
                 }
             );
         }
@@ -75,14 +77,8 @@ public:
 
 private:
     FormulaAST FormulaCreator(std::string expression) {
-        try {
-            std::istringstream in(std::move(expression));
-            return ParseFormulaAST(in);
-        }
-        catch (const std::exception& e) {
-            // TODO: fix this problem, there should be Ref error
-            throw FormulaException(e.what());
-        }
+        std::istringstream in(std::move(expression));
+        return ParseFormulaAST(in);
     }
 
 private:
@@ -90,10 +86,33 @@ private:
     std::vector<Position> referenced_cells_;
 };
 
+class FormulaRefError : public FormulaInterface {
+public:
+    Value Evaluate(const SheetInterface& sheet) const override {
+        return FormulaError(FormulaError::Category::Ref);
+    }
+
+    std::string GetExpression() const override {
+        return {};
+    }
+
+    std::vector<Position> GetReferencedCells() const override {
+        return {};
+    }
+};
+
 }  // namespace
 
 // -----------------------------------------------------------------------------
 
 std::unique_ptr<FormulaInterface> ParseFormula(std::string expression) {
-    return std::make_unique<Formula>(std::move(expression));
+    try {
+        return std::make_unique<Formula>(std::move(expression));
+    }
+    catch (const FormulaError& e) {
+        return std::make_unique<FormulaRefError>();
+    }
+    catch (const std::exception& e) {
+        throw FormulaException(e.what());
+    }
 }

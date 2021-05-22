@@ -267,21 +267,21 @@ void TestCommonCases() {
     ASSERT(sheet.GetCell(E3)->GetReferencedCells().size() == 3);
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(E3)->GetValue());
 
-    SetCellValue("Hello"s, B16, sheet);
+    SetCellValue("'7"s, B16, sheet);
     ASSERT(sheet.GetCell(B16)->GetReferencedCells().size() == 0);
-    std::visit(CellValueChecker{ "Hello"s }, sheet.GetCell(B16)->GetValue());
+    std::visit(CellValueChecker{ "7"s }, sheet.GetCell(B16)->GetValue());
 
     SetCellValue("=B16 - 1"s, F4, sheet);
     ASSERT(sheet.GetCell(F4)->GetReferencedCells().size() == 1);
     std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(F4)->GetValue());
 
-    //SetCellValue("=FFFF4 - 1"s, O54, sheet);
-    //ASSERT(sheet.GetCell(O54)->GetReferencedCells().size() == 1);
-    //std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(O54)->GetValue());
+    SetCellValue("=FFFF4 - 1"s, O54, sheet);
+    ASSERT(sheet.GetCell(O54)->GetReferencedCells().size() == 0);
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(O54)->GetValue());
 
-    //SetCellValue("=A1234567 - 1"s, J36, sheet);
-    //ASSERT(sheet.GetCell(J36)->GetReferencedCells().size() == 1);
-    //std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(J36)->GetValue());
+    SetCellValue("=A1234567 - 1"s, J36, sheet);
+    ASSERT(sheet.GetCell(J36)->GetReferencedCells().size() == 0);
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(J36)->GetValue());
 
     SetCellValue("13"s, K15, sheet);
     ASSERT(sheet.GetCell(K15)->GetReferencedCells().size() == 0);
@@ -307,6 +307,47 @@ void TestCommonCases() {
     }
 }
 
+void TestErrorDependencies() {
+    Sheet sheet;
+
+#define CREATE_CELL(a) \
+    Position a = Position::FromString(#a);
+
+    CREATE_CELL(A1);
+    CREATE_CELL(A2);
+    CREATE_CELL(A3);
+    CREATE_CELL(A4);
+    CREATE_CELL(A5);
+
+    SetCellValue("=A4 + A3 + A2 + A1"s, A5, sheet);
+    SetCellValue("=A3 + A2 + A1"s, A4, sheet);
+    SetCellValue("=A2 + A1"s, A3, sheet);
+    SetCellValue("=A1"s, A2, sheet);
+    SetCellValue("'7"s, A1, sheet);
+
+    std::visit(CellValueChecker{ "7" }, sheet.GetCell(A1)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(A2)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(A3)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(A4)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Value) }, sheet.GetCell(A5)->GetValue());
+
+    SetCellValue("=ZZZZ13"s, A1, sheet);
+
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A1)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A2)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A3)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A4)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Ref) }, sheet.GetCell(A5)->GetValue());
+
+    SetCellValue("=1/0"s, A1, sheet);
+
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A1)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A2)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A3)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A4)->GetValue());
+    std::visit(CellValueChecker{ FormulaError(FormulaError::Category::Div0) }, sheet.GetCell(A5)->GetValue());
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace
@@ -318,4 +359,5 @@ void Tests() {
     RUN_TEST(tr, TestSimpleCircularDependecies);
     RUN_TEST(tr, TestSimpleDependecies);
     RUN_TEST(tr, TestCommonCases);
+    RUN_TEST(tr, TestErrorDependencies);
 }

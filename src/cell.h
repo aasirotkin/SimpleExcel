@@ -26,6 +26,7 @@ public:
     }
     virtual ~CellValueInterface() = default;
     virtual Value GetValue() const = 0;
+    virtual Value GetRawValue() const = 0;
     virtual std::string GetText() const = 0;
     CellValueType GetCellValueType() const {
         return type_;
@@ -45,6 +46,10 @@ public:
         return 0.0;
     }
 
+    Value GetRawValue() const override {
+        return 0.0;
+    }
+
     std::string GetText() const override {
         return std::string();
     }
@@ -58,8 +63,11 @@ public:
     }
 
     Value GetValue() const  override {
-        // TODO: think of ESCAPE_SIGN
         return (!text_.empty() && text_.front() == ESCAPE_SIGN) ? std::string(text_.begin() + 1, text_.end()) : text_;
+    }
+
+    Value GetRawValue() const override {
+        return text_;
     }
 
     std::string GetText() const override {
@@ -95,6 +103,10 @@ public:
         return *cache_value_;
     }
 
+    Value GetRawValue() const override {
+        return GetValue();
+    }
+
     std::string GetText() const override {
         return '=' + formula_->GetExpression();
     }
@@ -128,6 +140,8 @@ public:
     void Clear();
 
     Value GetValue() const override;
+
+    Value GetRawValue() const;
 
     std::string GetText() const override;
 

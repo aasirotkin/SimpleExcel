@@ -316,7 +316,7 @@ public:
         auto value_str = ctx->CELL()->getSymbol()->getText();
         auto value = Position::FromString(value_str);
         if (!value.IsValid()) {
-            throw FormulaException("Invalid position: " + value_str);
+            throw FormulaError(FormulaError::Category::Ref);
         }
 
         cells_.push_front(value);
