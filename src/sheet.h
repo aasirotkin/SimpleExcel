@@ -33,6 +33,25 @@ private:
     Size CreatePrintableSize() const;
 
 private:
+    template <typename Func>
+    void Printer(std::ostream& output, Func func) const {
+        Size sz = GetPrintableSize();
+        for (int r = 0; r < sz.rows; ++r) {
+            bool is_first = true;
+            for (int c = 0; c < sz.cols; ++c) {
+                if (!is_first) {
+                    output << '\t';
+                }
+                is_first = false;
+                if (const auto* ptr_value = GetCell({ r, c })) {
+                    func(ptr_value);
+                }
+            }
+            output << '\n';
+        }
+    }
+
+private:
     SheetList sheet_list_;
 };
 

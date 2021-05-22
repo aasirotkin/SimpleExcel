@@ -55,36 +55,16 @@ Size Sheet::GetPrintableSize() const {
 }
 
 void Sheet::PrintValues(std::ostream& output) const {
-    Size sz = GetPrintableSize();
-    for (int r = 0; r < sz.rows; ++r) {
-        bool is_first = true;
-        for (int c = 0; c < sz.cols; ++c) {
-            if (!is_first) {
-                output << '\t';
-            }
-            is_first = false;
-            if (const auto* ptr_value = GetCell({ r, c })) {
-                std::visit([&](const auto& x) { output << x; }, ptr_value->GetValue());
-            }
-        }
-        output << '\n';
-    }
+    auto print_get_value = [&output](const CellInterface* ptr_value) {
+        std::visit([&](const auto& x) { output << x; }, ptr_value->GetValue());
+    };
+    Printer(output, print_get_value);
 }
 void Sheet::PrintTexts(std::ostream& output) const {
-    Size sz = GetPrintableSize();
-    for (int r = 0; r < sz.rows; ++r) {
-        bool is_first = true;
-        for (int c = 0; c < sz.cols; ++c) {
-            if (!is_first) {
-                output << '\t';
-            }
-            is_first = false;
-            if (const auto* ptr_value = GetCell({ r, c })) {
-                output << ptr_value->GetText();
-            }
-        }
-        output << '\n';
-    }
+    auto print_get_text = [&output](const CellInterface* ptr_value) {
+        output << ptr_value->GetText();
+    };
+    Printer(output, print_get_text);
 }
 
 void Sheet::CheckPosInPlace(Position pos) const {
